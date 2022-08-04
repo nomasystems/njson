@@ -1,0 +1,8 @@
+{application, njson, [
+    {description,
+        "OTP library to pragmatically and efficiently encode and decode JSON to Erlang maps"},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [kernel, stdlib]},
+    {env, []}
+]}.
