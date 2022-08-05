@@ -13,18 +13,30 @@
 %% limitations under the License.
 -module(njson).
 
+%%% INCLUDE FILES
+-include("njson.hrl").
+
 %%% EXTERNAL EXPORTS
 -export([decode/1, encode/1, encode/2]).
+
+%%% EXPORT TYPES
+-export_type([json/0]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
+-spec decode(Binary) -> Json when
+    Binary :: binary(),
+    Json :: json().
 decode(<<>>) ->
     undefined;
 decode(Json) ->
     {ok, Result, _Rest} = njson_decoder:decode(Json),
     Result.
 
+-spec encode(Json) -> Binary when
+    Json :: json(),
+    Binary :: binary().
 encode(Erlang) ->
     njson_encoder:encode(Erlang, false).
 
