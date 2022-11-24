@@ -41,7 +41,7 @@
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
 all() ->
-    [properties, json_decode, json_encode, json_json].
+    [properties, json_decode, json_encode, json_json, json_undefined_encoding].
 
 %%%-----------------------------------------------------------------------------
 %%% INIT SUITE EXPORTS
@@ -222,3 +222,15 @@ json_json_cases() ->
         {<<"[\"a\",\"b\",7]">>, [<<"a">>, <<"b">>, 7]},
         {<<"9">>, 9}
     ].
+
+json_undefined_encoding() ->
+    [{userdata, [{doc, "Properly undefined management in encoding"}]}].
+
+json_undefined_encoding(_Conf) ->
+    <<"{}">> = njson:encode(#{}),
+    <<"{\"foo\":\"bar\"}">> =
+        njson:encode(#{<<"undefined">> => undefined, <<"foo">> => <<"bar">>}),
+    <<"{\"foo\":{}}">> = njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined}}),
+    <<"{\"foo\":{\"bar\":\"baz\"}}">> =
+        njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}}),
+    ok.

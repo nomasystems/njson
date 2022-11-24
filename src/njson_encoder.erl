@@ -45,7 +45,7 @@ encode_val(false) ->
 encode_val(null) ->
     <<"null">>;
 encode_val(undefined) ->
-    <<>>;
+    [];
 encode_val(Integer) when is_integer(Integer) ->
     erlang:integer_to_binary(Integer);
 encode_val(Float) when is_float(Float) ->
@@ -54,39 +54,39 @@ encode_val(Bin) when is_binary(Bin) ->
     [$", escape(Bin), $"].
 
 encode_map(Map) when is_map(Map) ->
-    Encoded = maps:fold(fun map_fold_encode/3, <<>>, Map),
+    Encoded = maps:fold(fun map_fold_encode/3, [], Map),
     [${, Encoded, $}].
 
-map_fold_encode(_Key, undefined, <<>>) ->
+map_fold_encode(_Key, undefined, []) ->
     [];
 map_fold_encode(_Key, undefined, AccIn) ->
     AccIn;
-map_fold_encode(Key, Map, <<>>) when is_map(Map) ->
+map_fold_encode(Key, Map, []) when is_map(Map) ->
     [encode_key(Key), $:, encode_map(Map)];
 map_fold_encode(Key, Map, AccIn) when is_map(Map) ->
     [AccIn, $,, encode_key(Key), $:, encode_map(Map)];
-map_fold_encode(Key, List, <<>>) when is_list(List) ->
+map_fold_encode(Key, List, []) when is_list(List) ->
     [encode_key(Key), $:, encode_list(List)];
 map_fold_encode(Key, List, AccIn) when is_list(List) ->
     [AccIn, $,, encode_key(Key), $:, encode_list(List)];
-map_fold_encode(Key, Val, <<>>) ->
+map_fold_encode(Key, Val, []) ->
     [encode_key(Key), $:, encode_val(Val)];
 map_fold_encode(Key, Val, AccIn) ->
     [AccIn, $,, encode_key(Key), $:, encode_val(Val)].
 
 encode_list(List) when is_list(List) ->
-    Encoded = lists:foldl(fun list_fold_encode/2, <<>>, List),
+    Encoded = lists:foldl(fun list_fold_encode/2, [], List),
     [$[, Encoded, $]].
 
-list_fold_encode(Map, <<>>) when is_map(Map) ->
+list_fold_encode(Map, []) when is_map(Map) ->
     encode_map(Map);
 list_fold_encode(Map, AccIn) when is_map(Map) ->
     [AccIn, $,, encode_map(Map)];
-list_fold_encode(List, <<>>) when is_list(List) ->
+list_fold_encode(List, []) when is_list(List) ->
     encode_list(List);
 list_fold_encode(List, AccIn) when is_list(List) ->
     [AccIn, $,, encode_list(List)];
-list_fold_encode(Val, <<>>) ->
+list_fold_encode(Val, []) ->
     encode_val(Val);
 list_fold_encode(Val, AccIn) ->
     [AccIn, $,, encode_val(Val)].
