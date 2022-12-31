@@ -162,7 +162,12 @@ string_len(<<$\\, $n, Bin/binary>>, Pos, Escaped) ->
     string_len(Bin, Pos + 2, [{<<$\n>>, Pos, 2} | Escaped]);
 string_len(<<$\\, $u, U0, U1, U2, U3, Bin/binary>>, Pos, Escaped) ->
     Unicode = unicode(U0, U1, U2, U3),
-    string_len(Bin, Pos + 6, [{<<Unicode/utf8>>, Pos, 6} | Escaped]);
+    case is_surrogate(Unicode) of
+        true ->
+            surrogate(Unicode, Bin, Pos, Escaped);
+        false ->
+            string_len(Bin, Pos + 6, [{<<Unicode/utf8>>, Pos, 6} | Escaped])
+    end;
 string_len(<<_C, Bin/binary>>, Len, Escaped) ->
     string_len(Bin, Len + 1, Escaped).
 
@@ -181,3 +186,13 @@ dec(C) when C >= $a, C =< $f ->
     C - $a + 10;
 dec(C) when C >= $A, C =< $F ->
     C - $A + 10.
+
+is_surrogate(Unicode) when Unicode >= 16#D800, Unicode =< 16#DFFF ->
+    true;
+is_surrogate(_Unicode) ->
+    false.
+
+surrogate(Unicode0, <<$\\, $u, U0, U1, U2, U3, Bin/binary>>, Pos, Escaped) ->
+    Unicode1 = unicode(U0, U1, U2, U3),
+    Unicode = (Unicode0 - 16#D800) * 16#400 + (Unicode1 - 16#DC00) + 16#10000,
+    string_len(Bin, Pos + 12, [{<<Unicode/utf8>>, Pos, 12} | Escaped]).
