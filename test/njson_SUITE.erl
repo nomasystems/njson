@@ -13,6 +13,9 @@
 %% limitations under the License.
 -module(njson_SUITE).
 
+%%% INCLUDES
+-include_lib("stdlib/include/assert.hrl").
+
 %%% EXTERNAL EXPORTS
 -compile([export_all, nowarn_export_all]).
 
@@ -41,7 +44,7 @@
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
 all() ->
-    [properties, json_decode, json_encode, json_json, json_undefined_encoding].
+    [properties, json_decode, json_encode, json_json, json_undefined_encoding, json_emoji].
 
 %%%-----------------------------------------------------------------------------
 %%% INIT SUITE EXPORTS
@@ -234,3 +237,19 @@ json_undefined_encoding(_Conf) ->
     <<"{\"foo\":{\"bar\":\"baz\"}}">> =
         njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}}),
     ok.
+
+json_emoji() ->
+    [{userdata, [{doc, "Properly decoding json with emojis"}]}].
+
+json_emoji(_Conf) ->
+    HoFBin = <<"{\"text\":{\"body\":\"\\u2764\\u200d\\ud83d\\udd25\"}}">>,
+    DecodedHoF = #{
+        <<"text">> => #{<<"body">> => <<226, 157, 164, 226, 128, 141, 240, 159, 148, 165>>}
+    },
+    ?assertEqual(DecodedHoF, njson:decode(HoFBin)),
+    EncodedHoF =
+        <<123, 34, 116, 101, 120, 116, 34, 58, 123, 34, 98, 111, 100, 121, 34, 58, 34, 226, 157,
+            164, 226, 128, 141, 240, 159, 148, 165, 34, 125, 125>>,
+    ?assertEqual(EncodedHoF, njson:encode(DecodedHoF)),
+    io:format("~tp~n", [DecodedHoF]),
+    io:format("~ts~n", [EncodedHoF]).
