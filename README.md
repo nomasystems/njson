@@ -1,5 +1,5 @@
 # njson
-![njson](https://github.com/nomasystems/njson/actions/workflows/build.yml/badge.svg)
+![[njson](https://github.com/nomasystems/njson/actions/workflows/ci.yml)](https://github.com/nomasystems/njson/actions/workflows/ci.yml/badge.svg)
 
 `njson` is an OTP library to pragmatically and efficiently encode and decode JSON to Erlang maps.
 
