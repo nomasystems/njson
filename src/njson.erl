@@ -17,7 +17,7 @@
 -export([decode/1, encode/1, encode/2]).
 
 %%% TYPES
--type t() :: boolean() | number() | binary() | [t()] | #{binary() => t()}.
+-type t() :: undefined | boolean() | number() | binary() | [t()] | #{binary() => t()}.
 
 %%% EXPORT TYPES
 -export_type([t/0]).
