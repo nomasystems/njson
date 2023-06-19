@@ -17,10 +17,10 @@
 -export([decode/1, encode/1, encode/2]).
 
 %%% TYPES
--type json() :: boolean() | number() | binary() | [json()] | #{binary() => json()}.
+-type t() :: boolean() | number() | binary() | [json()] | #{binary() => json()}.
 
 %%% EXPORT TYPES
--export_type([json/0]).
+-export_type([t/0]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
