@@ -13,11 +13,11 @@
 %% limitations under the License.
 -module(njson).
 
-%%% INCLUDE FILES
--include("njson.hrl").
-
 %%% EXTERNAL EXPORTS
 -export([decode/1, encode/1, encode/2]).
+
+%%% TYPES
+-type json() :: boolean() | number() | binary() | [json()] | #{binary() => json()}.
 
 %%% EXPORT TYPES
 -export_type([json/0]).
