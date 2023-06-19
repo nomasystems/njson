@@ -17,7 +17,7 @@
 -export([decode/1, encode/1, encode/2]).
 
 %%% TYPES
--type t() :: boolean() | number() | binary() | [json()] | #{binary() => json()}.
+-type t() :: boolean() | number() | binary() | [t()] | #{binary() => t()}.
 
 %%% EXPORT TYPES
 -export_type([t/0]).
@@ -27,7 +27,7 @@
 %%%-----------------------------------------------------------------------------
 -spec decode(Binary) -> Json when
     Binary :: binary(),
-    Json :: json().
+    Json :: t().
 decode(<<>>) ->
     undefined;
 decode(Json) ->
@@ -35,7 +35,7 @@ decode(Json) ->
     Result.
 
 -spec encode(Json) -> Binary when
-    Json :: json(),
+    Json :: t(),
     Binary :: binary().
 encode(Erlang) ->
     njson_encoder:encode(Erlang, false).
