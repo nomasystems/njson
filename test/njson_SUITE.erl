@@ -93,7 +93,7 @@ json_decode() ->
 json_decode(_Conf) ->
     Test = fun({Json, Erlang}) ->
         try
-            Erlang = njson:decode(Json)
+            {ok, Erlang} = njson:decode(Json)
         catch
             Error ->
                 throw({error, [{decoding, Json}, {exptected, Erlang}, {received, Error}]})
@@ -107,7 +107,7 @@ json_encode() ->
 json_encode(_Conf) ->
     Test = fun({Json, Erlang}) ->
         try
-            Json = njson:encode(Erlang)
+            {ok, Json} = njson:encode(Erlang)
         catch
             Error ->
                 throw({error, [{encoding, Erlang}, {exptected, Json}, {received, Error}]})
@@ -117,7 +117,8 @@ json_encode(_Conf) ->
 
     Test2 = fun({Json, Erlang}) ->
         try
-            Json = iolist_to_binary(njson:encode(Erlang, true))
+            {ok, IO} = njson:encode(Erlang, true),
+            Json = iolist_to_binary(IO)
         catch
             Error ->
                 throw({error, [{encoding, Erlang}, {exptected, Json}, {received, Error}]})
@@ -137,11 +138,11 @@ json_decode_only_cases() ->
         }},
         {<<"{\"currency\": \"\\u20ac\"}">>, #{<<"currency">> => <<"€"/utf8>>}},
         {<<"{\"key1\":\"Val1\", \"key2\":null, \"key3\":\"Val3\"}">>, #{
-            <<"key1">> => <<"Val1">>, <<"key3">> => <<"Val3">>
+            <<"key1">> => <<"Val1">>, <<"key2">> => null, <<"key3">> => <<"Val3">>
         }},
 
         {<<"{\"d\":\"a6\\/\"}">>, #{<<"d">> => <<"a6/">>}},
-        {<<"null">>, undefined}
+        {<<"null">>, null}
     ].
 
 json_encode_only_cases() ->
@@ -176,7 +177,6 @@ json_cases() ->
     [
         {<<"true">>, true},
         {<<"false">>, false},
-        {<<"">>, undefined},
         {<<"1">>, 1},
         {<<"2.0">>, 2.0},
         {<<"\"hola\"">>, <<"hola">>},
@@ -205,9 +205,9 @@ json_json() ->
     [{userdata, [{doc, "Registry API."}]}].
 
 json_json(_Conf) ->
-    Test = fun({Json, Erlang}) -> Erlang = njson:decode(Json) end,
+    Test = fun({Json, Erlang}) -> {ok, Erlang} = njson:decode(Json) end,
     ok = lists:foreach(Test, json_json_cases()),
-    Test2 = fun({Json, Erlang}) -> Json = njson:encode(Erlang) end,
+    Test2 = fun({Json, Erlang}) -> {ok, Json} = njson:encode(Erlang) end,
     ok = lists:foreach(Test2, json_json_cases()).
 
 json_json_cases() ->
@@ -215,7 +215,6 @@ json_json_cases() ->
         {<<"true">>, true},
         {<<"false">>, false},
         {<<"[]">>, []},
-        {<<"">>, undefined},
         {<<"\"ho\\\"l2\"">>, <<"ho\"l2">>},
         {<<"\"ho\\\"l\\\"2\"">>, <<"ho\"l\"2">>},
         {<<"[true]">>, [true]},
@@ -231,12 +230,14 @@ json_undefined_encoding() ->
     [{userdata, [{doc, "Properly undefined management in encoding"}]}].
 
 json_undefined_encoding(_Conf) ->
-    <<"{}">> = njson:encode(#{}),
-    <<"{\"foo\":\"bar\"}">> =
-        njson:encode(#{<<"undefined">> => undefined, <<"foo">> => <<"bar">>}),
-    <<"{\"foo\":{}}">> = njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined}}),
-    <<"{\"foo\":{\"bar\":\"baz\"}}">> =
-        njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}}),
+    {ok, <<"{}">>} = njson:encode(#{}),
+    {ok, <<"{\"foo\":\"bar\"}">>} = njson:encode(#{
+        <<"undefined">> => undefined, <<"foo">> => <<"bar">>
+    }),
+    {ok, <<"{\"foo\":{}}">>} = njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined}}),
+    {ok, <<"{\"foo\":{\"bar\":\"baz\"}}">>} = njson:encode(#{
+        <<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}
+    }),
     ok.
 
 json_emoji() ->
@@ -247,10 +248,10 @@ json_emoji(_Conf) ->
     DecodedHoF = #{
         <<"text">> => #{<<"body">> => <<226, 157, 164, 226, 128, 141, 240, 159, 148, 165>>}
     },
-    ?assertEqual(DecodedHoF, njson:decode(HoFBin)),
+    ?assertEqual({ok, DecodedHoF}, njson:decode(HoFBin)),
     EncodedHoF =
         <<123, 34, 116, 101, 120, 116, 34, 58, 123, 34, 98, 111, 100, 121, 34, 58, 34, 226, 157,
             164, 226, 128, 141, 240, 159, 148, 165, 34, 125, 125>>,
-    ?assertEqual(EncodedHoF, njson:encode(DecodedHoF)),
+    ?assertEqual({ok, EncodedHoF}, njson:encode(DecodedHoF)),
     io:format("~tp~n", [DecodedHoF]),
     io:format("~ts~n", [EncodedHoF]).

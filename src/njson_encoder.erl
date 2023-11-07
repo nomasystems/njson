@@ -13,31 +13,40 @@
 %% limitations under the License.
 -module(njson_encoder).
 
+%%% INCLUDES
+-include("njson.hrl").
+
 %%% EXTERNAL EXPORTS
 -export([encode/2]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
+-spec encode(Json, boolean()) -> {ok, Result} | {error, Reason} when
+    Json :: t(),
+    Result :: binary() | iolist(),
+    Reason :: term().
 encode(Map, true) when is_map(Map) ->
-    encode_map(Map);
+    {ok, encode_map(Map)};
 encode(Map, false) when is_map(Map) ->
-    iolist_to_binary(encode_map(Map));
+    {ok, iolist_to_binary(encode_map(Map))};
 encode(List, true) when is_list(List) ->
-    encode_list(List);
+    {ok, encode_list(List)};
 encode(List, false) when is_list(List) ->
-    iolist_to_binary(encode_list(List));
+    {ok, iolist_to_binary(encode_list(List))};
 encode(Val, true) ->
-    encode_val(Val);
+    {ok, encode_val(Val)};
 encode(Val, false) ->
-    iolist_to_binary(encode_val(Val)).
+    {ok, iolist_to_binary(encode_val(Val))}.
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
+-spec encode_key(binary()) -> iolist() | binary().
 encode_key(Key) when is_binary(Key) ->
     [$", Key, $"].
 
+-spec encode_val(binary()) -> iolist().
 encode_val(true) ->
     <<"true">>;
 encode_val(false) ->
@@ -53,10 +62,12 @@ encode_val(Float) when is_float(Float) ->
 encode_val(Bin) when is_binary(Bin) ->
     [$", escape(Bin), $"].
 
+-spec encode_map(map()) -> iolist().
 encode_map(Map) when is_map(Map) ->
     Encoded = maps:fold(fun map_fold_encode/3, [], Map),
     [${, Encoded, $}].
 
+-spec map_fold_encode(binary(), #{binary() => t()}, iolist()) -> iolist().
 map_fold_encode(_Key, undefined, []) ->
     [];
 map_fold_encode(_Key, undefined, AccIn) ->
@@ -74,10 +85,14 @@ map_fold_encode(Key, Val, []) ->
 map_fold_encode(Key, Val, AccIn) ->
     [AccIn, $,, encode_key(Key), $:, encode_val(Val)].
 
+-spec encode_list(list(t())) -> iolist().
 encode_list(List) when is_list(List) ->
     Encoded = lists:foldl(fun list_fold_encode/2, [], List),
     [$[, Encoded, $]].
 
+-spec list_fold_encode(MapOrList, iolist()) -> Result when
+    MapOrList :: #{binary() => t()} | list(t()),
+    Result :: iolist().
 list_fold_encode(Map, []) when is_map(Map) ->
     encode_map(Map);
 list_fold_encode(Map, AccIn) when is_map(Map) ->
@@ -91,9 +106,11 @@ list_fold_encode(Val, []) ->
 list_fold_encode(Val, AccIn) ->
     [AccIn, $,, encode_val(Val)].
 
+-spec escape(binary()) -> iolist().
 escape(Bin) ->
     escape(Bin, Bin, 0, []).
 
+-spec escape(binary(), binary(), non_neg_integer(), iolist()) -> iolist().
 escape(<<>>, Base, _Len, []) ->
     Base;
 escape(<<>>, Base, _Len, Acc) ->
