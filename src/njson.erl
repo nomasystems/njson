@@ -27,11 +27,13 @@
 -type encode_error() :: {error, {encode_error_reason(), any()}}.
 
 %%% EXPORT TYPES
--export_type([t/0]).
--export_type([decode_error_reason/0]).
--export_type([decode_error/0]).
--export_type([encode_error_reason/0]).
--export_type([encode_error/0]).
+-export_type([
+    t/0,
+    decode_error/0,
+    decode_error_reason/0,
+    encode_error/0,
+    encode_error_reason/0
+]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
