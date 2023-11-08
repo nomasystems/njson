@@ -44,7 +44,7 @@
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
 all() ->
-    [properties, json_decode, json_encode, json_json, json_undefined_encoding, json_emoji].
+    [properties, json_decode, json_encode, json_json, json_undefined_encoding, json_emoji, json_errors].
 
 %%%-----------------------------------------------------------------------------
 %%% INIT SUITE EXPORTS
@@ -117,6 +117,7 @@ json_decode_only_cases() ->
         {<<"-1.0e-3">>, -0.001},
         {<<"+1.0E+3">>, 1.0e3},
         {<<"+1E+3">>, 1.0e3},
+        {<<"false", $\s, $\t, $\r, $\n>>, false},
         {<<"\"\\\\, \\b, \\f, \\r, \\n\"">>, <<"\\, \b, \f, \r, \n">>},
         {<<"\s\t\r\n { \r\n   \"currency\" \t\r\n: \"\\u20AC\"}">>, #{
             <<"currency">> => <<"€"/utf8>>
@@ -223,7 +224,7 @@ json_undefined_encoding() ->
 json_undefined_encoding(_Conf) ->
     ?assertEqual(
         {ok, <<"{}">>},
-        njson:encode(#{})
+        njson:encode(#{}, false)
     ),
     ?assertEqual(
         {ok, <<"{\"foo\":\"bar\"}">>},
@@ -254,3 +255,17 @@ json_emoji(_Conf) ->
     ?assertEqual({ok, EncodedHoF}, njson:encode(DecodedHoF)),
     io:format("~tp~n", [DecodedHoF]),
     io:format("~ts~n", [EncodedHoF]).
+
+json_errors() ->
+    [{userdata, [{doc, "Check errors"}]}].
+
+json_errors(_Conf) ->
+    {error, _} = njson:decode(<<"not-a-json">>),
+    {error, _} = njson:decode(<<"folse">>),
+    {error, _} = njson:decode(<<"troe">>),
+    {error, _} = njson:decode(<<"other">>),
+    {error, _} = njson:decode(<<"{,}">>),
+    {error, _} = njson:decode(<<"false,">>),
+    {error, _} = njson:encode(test),
+    ok.
+ 
