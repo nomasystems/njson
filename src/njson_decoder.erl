@@ -28,7 +28,6 @@
         {unicode, 4}
     ]}
 ]).
-%-compile([bin_opt_info]).
 
 -dialyzer({no_improper_lists, [finalize_string/6, unescape/6]}).
 
