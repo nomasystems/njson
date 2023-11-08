@@ -271,7 +271,7 @@ array_close(<<Bin/binary>>, Original, Skip, [?ARRAY, [] | Next]) ->
     Binary :: binary(),
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
-    Value :: false | null | true | binary() | number() | list() | map(),
+    Value :: njson:t(),
     OK :: {ok, Json},
     Json :: njson:t(),
     Error :: njson:decode_error().
