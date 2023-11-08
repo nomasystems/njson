@@ -79,7 +79,7 @@ encode_val(Other) ->
 
 -spec encode_map(map()) -> {ok, iolist()} | {error, {invalid_map, any()}}.
 encode_map(Map) when is_map(Map) ->
-    case mapfold(fun map_fold_encode/3, [], Map) of
+    case mapbind(fun map_fold_encode/3, [], Map) of
         {ok, Encoded} ->
             {ok, [${, Encoded, $}]};
         {error, Error} ->
@@ -147,7 +147,7 @@ map_fold_encode(Key, Val, AccIn) ->
 
 -spec encode_list(list()) -> {ok, iolist()} | {error, {invalid_list, any()}}.
 encode_list(List) when is_list(List) ->
-    case listfold(fun list_fold_encode/2, [], List) of
+    case listbind(fun list_fold_encode/2, [], List) of
         {ok, Encoded} ->
             {ok, [$[, Encoded, $]]};
         Error ->
@@ -217,9 +217,9 @@ escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
     escape(Bin, Base, Len + 1, Acc).
 
 %%%-----------------------------------------------------------------------------
-%%% MONADIC FOLDS
+%%% BIND FUNCTIONS
 %%%-----------------------------------------------------------------------------
--spec listfold(Fun, Acc0, List) -> {ok, Acc1} | {error, any()} when
+-spec listbind(Fun, Acc0, List) -> {ok, Acc1} | {error, any()} when
     Fun :: fun((Elem :: T, AccIn) -> {ok, AccOut} | {error, any()}),
     Acc0 :: any(),
     Acc1 :: any(),
@@ -227,43 +227,43 @@ escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
     AccOut :: any(),
     List :: [T],
     T :: any().
-listfold(F, AccIn, [Hd | Tail]) when is_function(F, 2) ->
+listbind(F, AccIn, [Hd | Tail]) when is_function(F, 2) ->
     case F(Hd, AccIn) of
         {ok, AccOut} ->
-            listfold_(F, AccOut, Tail);
+            listbind_(F, AccOut, Tail);
         {error, Reason} ->
             {error, {Hd, Reason}}
     end;
-listfold(F, AccIn, []) when is_function(F, 2) ->
+listbind(F, AccIn, []) when is_function(F, 2) ->
     {ok, AccIn}.
 
-listfold_(F, AccIn, [Hd | Tail]) ->
+listbind_(F, AccIn, [Hd | Tail]) ->
     case F(Hd, AccIn) of
         {ok, AccOut} ->
-            listfold_(F, AccOut, Tail);
+            listbind_(F, AccOut, Tail);
         {error, Reason} ->
             {error, {Hd, Reason}}
     end;
-listfold_(_F, Acc, []) ->
+listbind_(_F, Acc, []) ->
     {ok, Acc}.
 
--spec mapfold(Fun, Init, MapOrIter) -> {ok, Acc} | {error, any()} when
+-spec mapbind(Fun, Init, MapOrIter) -> {ok, Acc} | {error, any()} when
     Fun :: fun((Key, Value, AccIn) -> {ok, AccOut} | {error, any()}),
     Init :: any(),
     Acc :: AccOut,
     AccIn :: Init | AccOut,
     MapOrIter :: #{Key => Value} | maps:iterator(Key, Value).
-mapfold(Fun, Init, Map) when is_map(Map), is_function(Fun, 3) ->
-    mapfold_(Fun, Init, maps:next(maps:iterator(Map)));
-mapfold(_Fun, _Init, Map) ->
+mapbind(Fun, Init, Map) when is_map(Map), is_function(Fun, 3) ->
+    mapbind_(Fun, Init, maps:next(maps:iterator(Map)));
+mapbind(_Fun, _Init, Map) ->
     {error, {bad_map, Map}}.
 
-mapfold_(Fun, Acc, {K, V, Iter}) ->
+mapbind_(Fun, Acc, {K, V, Iter}) ->
     case Fun(K, V, Acc) of
         {ok, AccOut} ->
-            mapfold_(Fun, AccOut, maps:next(Iter));
+            mapbind_(Fun, AccOut, maps:next(Iter));
         {error, Reason} ->
             {error, {K, V, Reason}}
     end;
-mapfold_(_Fun, Acc, none) ->
+mapbind_(_Fun, Acc, none) ->
     {ok, Acc}.
