@@ -109,7 +109,9 @@ json_encode(_Conf) ->
         {ok, Encoded} = njson:encode(Erlang),
         ?assertEqual(Json, iolist_to_binary(Encoded))
     end,
-    lists:foreach(Test2, json_encode_only_cases() ++ json_cases()).
+    lists:foreach(Test2, json_encode_only_cases() ++ json_cases()),
+    {ok, _Json} = njson:encode(#{<<"key2">> => <<"Val2">>}, true),
+    {ok, _Json2} = njson:encode([<<"val1">>, <<"val2">>], true).
 
 json_decode_only_cases() ->
     [
