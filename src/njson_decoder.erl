@@ -102,7 +102,7 @@ val(<<C, Bin/binary>>, Original, Skip, Next) ->
             rue(Bin, Original, Skip, Next);
         ${ ->
             key(Bin, Original, Skip + 1, [?KEY, #{} | Next]);
-        _ ->
+        _C ->
             {error, {invalid_value, [C], Skip}}
     end.
 
