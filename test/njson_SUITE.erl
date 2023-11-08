@@ -44,7 +44,15 @@
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
 all() ->
-    [properties, json_decode, json_encode, json_json, json_undefined_encoding, json_emoji, json_errors].
+    [
+        properties,
+        json_decode,
+        json_encode,
+        json_json,
+        json_undefined_encoding,
+        json_emoji,
+        json_errors
+    ].
 
 %%%-----------------------------------------------------------------------------
 %%% INIT SUITE EXPORTS
@@ -270,4 +278,3 @@ json_errors(_Conf) ->
     {error, _} = njson:decode(<<"false,">>),
     {error, _} = njson:encode(test),
     ok.
- 
