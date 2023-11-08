@@ -28,6 +28,9 @@
         {unicode, 4}
     ]}
 ]).
+
+-dialyzer({no_improper_lists, [finalize_string/6, unescape/6]}).
+
 %-compile([bin_opt_info]).
 
 %%% INCLUDE
