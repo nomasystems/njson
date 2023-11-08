@@ -19,7 +19,7 @@
 -export([bench/0, bench_decode/0, bench_encode/0, profile_decode/0, profile_encode/0]).
 
 %%% MACROS
--define(TIMES , 1000).
+-define(TIMES , 100).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
@@ -74,30 +74,29 @@ profile_encode() ->
 %%%-----------------------------------------------------------------------------
 head() ->
     io:format("~20.. s  ~20.. s  ~20.. s  ~20.. s~n",
-              ["File size (bytes)", "NJson time(us)", "Jsone time (us)", "Jason time (us)"]).
+              ["File size (bytes)", "NJson time(us)", "Thoas time (us)", "Jsone time (us)"]).
  
 bench_decode(Path, Times) ->
     {ok, Bin} = file:read_file(Path),
-    JasonDecodeTime = erlperf:time(fun() -> jason:decode(Bin) end, Times),
+    ThoasDecodeTime = erlperf:time(fun() -> thoas:decode(Bin) end, Times),
     JsoneDecodeTime = erlperf:time(fun() -> jsone:decode(Bin,[]) end, Times),
     NJsonDecodeTime = erlperf:time(fun() -> njson:decode(Bin) end, Times),
 
     io:format("~20.. B  ~20.. B  ~20.. B  ~20.. B~n",
               [byte_size(Bin),
-               round(NJsonDecodeTime/Times),
-               round(JsoneDecodeTime/Times),
-               round(JasonDecodeTime/Times)]).
+               NJsonDecodeTime,
+               ThoasDecodeTime,
+               JsoneDecodeTime]).
    
 bench_encode(Path, Times) ->
     {ok, Bin} = file:read_file(Path),
-    J = njson:decode(Bin),
+    {ok, J} = njson:decode(Bin),
 
-
-    JasonEncodeTime = erlperf:time(fun() -> jason:encode(J) end, Times),
+    ThoasEncodeTime = erlperf:time(fun() -> thoas:encode(J) end, Times),
     JsoneEncodeTime = erlperf:time(fun() -> jsone:encode(J, []) end, Times),
-    NJsonEncodeTime = erlperf:time(fun() -> njson:encode(J, true) end, Times),
+    NJsonEncodeTime = erlperf:time(fun() -> njson:encode(J, false) end, Times),
     io:format("~20.. B  ~20.. B  ~20.. B  ~20.. B~n",
               [byte_size(Bin),
-               round(NJsonEncodeTime/Times),
-               round(JsoneEncodeTime/Times),
-               round(JasonEncodeTime/Times)]).
+               NJsonEncodeTime,
+               ThoasEncodeTime,
+               JsoneEncodeTime]).

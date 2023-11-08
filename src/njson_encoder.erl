@@ -13,7 +13,7 @@
 %% limitations under the License.
 -module(njson_encoder).
 
-%%% INCLUDES
+%%% INCLUDE
 -include("njson.hrl").
 
 %%% EXTERNAL EXPORTS
@@ -22,95 +22,172 @@
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec encode(Json, boolean()) -> {ok, Result} | {error, Reason} when
-    Json :: t(),
-    Result :: binary() | iolist(),
-    Reason :: term().
+-spec encode(Json, boolean()) -> {ok, Binary} | encode_error() when
+    Json :: njson:t(),
+    Binary :: binary().
 encode(Map, true) when is_map(Map) ->
-    {ok, encode_map(Map)};
+    encode_map(Map);
 encode(Map, false) when is_map(Map) ->
-    {ok, iolist_to_binary(encode_map(Map))};
+    case encode_map(Map) of
+        {ok, Encoded} ->
+            {ok, iolist_to_binary(Encoded)};
+        Error ->
+            Error
+    end;
 encode(List, true) when is_list(List) ->
-    {ok, encode_list(List)};
+    encode_list(List);
 encode(List, false) when is_list(List) ->
-    {ok, iolist_to_binary(encode_list(List))};
+    case encode_list(List) of
+        {ok, Encoded} ->
+            {ok, iolist_to_binary(Encoded)};
+        Error ->
+            Error
+    end;
 encode(Val, true) ->
-    {ok, encode_val(Val)};
+    encode_val(Val);
 encode(Val, false) ->
-    {ok, iolist_to_binary(encode_val(Val))}.
+    case encode_val(Val) of
+        {ok, Encoded} ->
+            {ok, iolist_to_binary(Encoded)};
+        Error ->
+            Error
+    end.
 
 %%%-----------------------------------------------------------------------------
-%%% EXTERNAL EXPORTS
+%%% INTERNAL FUNCTIONS
 %%%-----------------------------------------------------------------------------
--spec encode_key(binary()) -> iolist() | binary().
+-spec encode_key(binary()) -> {ok, iolist()} | {error, {invalid_key, any()}}.
 encode_key(Key) when is_binary(Key) ->
-    [$", Key, $"].
+    {ok, [$", Key, $"]};
+encode_key(Key) ->
+    {error, {invalid_key, Key}}.
 
--spec encode_val(binary()) -> iolist().
+-spec encode_val(any()) -> {ok, iolist()} | {error, {invalid_value, any()}}.
 encode_val(true) ->
-    <<"true">>;
+    {ok, <<"true">>};
 encode_val(false) ->
-    <<"false">>;
+    {ok, <<"false">>};
 encode_val(null) ->
-    <<"null">>;
+    {ok, <<"null">>};
 encode_val(undefined) ->
-    [];
+    {ok, []};
 encode_val(Integer) when is_integer(Integer) ->
-    erlang:integer_to_binary(Integer);
+    {ok, erlang:integer_to_binary(Integer)};
 encode_val(Float) when is_float(Float) ->
-    erlang:float_to_binary(Float, [short]);
+    {ok, erlang:float_to_binary(Float, [short])};
 encode_val(Bin) when is_binary(Bin) ->
-    [$", escape(Bin), $"].
+    {ok, [$", escape(Bin), $"]};
+encode_val(Other) ->
+    {error, {invalid_value, Other}}.
 
--spec encode_map(map()) -> iolist().
+-spec encode_map(map()) -> {ok, iolist()} | {error, {invalid_map, any()}}.
 encode_map(Map) when is_map(Map) ->
-    Encoded = maps:fold(fun map_fold_encode/3, [], Map),
-    [${, Encoded, $}].
+    case mapfold(fun map_fold_encode/3, [], Map) of
+        {ok, Encoded} ->
+            {ok, [${, Encoded, $}]};
+        {error, Error} ->
+            {error, {invalid_map, Error}}
+    end.
 
--spec map_fold_encode(binary(), #{binary() => t()}, iolist()) -> iolist().
 map_fold_encode(_Key, undefined, []) ->
-    [];
+    {ok, []};
 map_fold_encode(_Key, undefined, AccIn) ->
-    AccIn;
+    {ok, AccIn};
 map_fold_encode(Key, Map, []) when is_map(Map) ->
-    [encode_key(Key), $:, encode_map(Map)];
+    case {encode_key(Key), encode_map(Map)} of
+        {{ok, EncodedKey}, {ok, EncodedMap}} ->
+            {ok, [EncodedKey, $:, EncodedMap]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end;
 map_fold_encode(Key, Map, AccIn) when is_map(Map) ->
-    [AccIn, $,, encode_key(Key), $:, encode_map(Map)];
+    case {encode_key(Key), encode_map(Map)} of
+        {{ok, EncodedKey}, {ok, EncodedMap}} ->
+            {ok, [AccIn, $,, EncodedKey, $:, EncodedMap]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end;
 map_fold_encode(Key, List, []) when is_list(List) ->
-    [encode_key(Key), $:, encode_list(List)];
+    case {encode_key(Key), encode_list(List)} of
+        {{ok, EncodedKey}, {ok, EncodedList}} ->
+            {ok, [EncodedKey, $:, EncodedList]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end;
 map_fold_encode(Key, List, AccIn) when is_list(List) ->
-    [AccIn, $,, encode_key(Key), $:, encode_list(List)];
+    case {encode_key(Key), encode_list(List)} of
+        {{ok, EncodedKey}, {ok, EncodedList}} ->
+            {ok, [AccIn, $,, EncodedKey, $:, EncodedList]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end;
 map_fold_encode(Key, Val, []) ->
-    [encode_key(Key), $:, encode_val(Val)];
+    case {encode_key(Key), encode_val(Val)} of
+        {{ok, EncodedKey}, {ok, EncodedVal}} ->
+            {ok, [EncodedKey, $:, EncodedVal]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end;
 map_fold_encode(Key, Val, AccIn) ->
-    [AccIn, $,, encode_key(Key), $:, encode_val(Val)].
+    case {encode_key(Key), encode_val(Val)} of
+        {{ok, EncodedKey}, {ok, EncodedVal}} ->
+            {ok, [AccIn, $,, EncodedKey, $:, EncodedVal]};
+        {{error, _Reason} = Error, _} ->
+            Error;
+        {_, {error, _Reason} = Error} ->
+            Error
+    end.
 
--spec encode_list(list(t())) -> iolist().
+-spec encode_list(list()) -> {ok, iolist()} | {error, {invalid_list, any()}}.
 encode_list(List) when is_list(List) ->
-    Encoded = lists:foldl(fun list_fold_encode/2, [], List),
-    [$[, Encoded, $]].
+    case listfold(fun list_fold_encode/2, [], List) of
+        {ok, Encoded} ->
+            {ok, [$[, Encoded, $]]};
+        Error ->
+            Error
+    end.
 
--spec list_fold_encode(MapOrList, iolist()) -> Result when
-    MapOrList :: #{binary() => t()} | list(t()),
-    Result :: iolist().
 list_fold_encode(Map, []) when is_map(Map) ->
     encode_map(Map);
 list_fold_encode(Map, AccIn) when is_map(Map) ->
-    [AccIn, $,, encode_map(Map)];
+    case encode_map(Map) of
+        {ok, Encoded} ->
+            {ok, [AccIn, $,, Encoded]};
+        Error ->
+            Error
+    end;
 list_fold_encode(List, []) when is_list(List) ->
     encode_list(List);
 list_fold_encode(List, AccIn) when is_list(List) ->
-    [AccIn, $,, encode_list(List)];
+    case encode_list(List) of
+        {ok, Encoded} ->
+            {ok, [AccIn, $,, Encoded]};
+        Error ->
+            Error
+    end;
 list_fold_encode(Val, []) ->
     encode_val(Val);
 list_fold_encode(Val, AccIn) ->
-    [AccIn, $,, encode_val(Val)].
+    case encode_val(Val) of
+        {ok, Encoded} ->
+            {ok, [AccIn, $,, Encoded]};
+        Error ->
+            Error
+    end.
 
--spec escape(binary()) -> iolist().
 escape(Bin) ->
     escape(Bin, Bin, 0, []).
 
--spec escape(binary(), binary(), non_neg_integer(), iolist()) -> iolist().
 escape(<<>>, Base, _Len, []) ->
     Base;
 escape(<<>>, Base, _Len, Acc) ->
@@ -141,3 +218,55 @@ escape(<<$\t, Bin/binary>>, Base, Len, Acc) ->
     escape(Bin, Bin, 0, [Acc, String, $\\, $t]);
 escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
     escape(Bin, Base, Len + 1, Acc).
+
+%%%-----------------------------------------------------------------------------
+%%% MONADIC FOLDS
+%%%-----------------------------------------------------------------------------
+-spec listfold(Fun, Acc0, List) -> {ok, Acc1} | {error, any()} when
+    Fun :: fun((Elem :: T, AccIn) -> {ok, AccOut} | {error, any()}),
+    Acc0 :: any(),
+    Acc1 :: any(),
+    AccIn :: any(),
+    AccOut :: any(),
+    List :: [T],
+    T :: any().
+listfold(F, AccIn, [Hd | Tail]) when is_function(F, 2) ->
+    case F(Hd, AccIn) of
+        {ok, AccOut} ->
+            listfold_(F, AccOut, Tail);
+        {error, Reason} ->
+            {error, {Hd, Reason}}
+    end;
+listfold(F, AccIn, []) when is_function(F, 2) ->
+    {ok, AccIn}.
+
+listfold_(F, AccIn, [Hd | Tail]) ->
+    case F(Hd, AccIn) of
+        {ok, AccOut} ->
+            listfold_(F, AccOut, Tail);
+        {error, Reason} ->
+            {error, {Hd, Reason}}
+    end;
+listfold_(_F, Acc, []) ->
+    {ok, Acc}.
+
+-spec mapfold(Fun, Init, MapOrIter) -> {ok, Acc} | {error, any()} when
+    Fun :: fun((Key, Value, AccIn) -> {ok, AccOut} | {error, any()}),
+    Init :: any(),
+    Acc :: AccOut,
+    AccIn :: Init | AccOut,
+    MapOrIter :: #{Key => Value} | maps:iterator(Key, Value).
+mapfold(Fun, Init, Map) when is_map(Map), is_function(Fun, 3) ->
+    mapfold_(Fun, Init, maps:next(maps:iterator(Map)));
+mapfold(_Fun, _Init, Map) ->
+    {error, {bad_map, Map}}.
+
+mapfold_(Fun, Acc, {K, V, Iter}) ->
+    case Fun(K, V, Acc) of
+        {ok, AccOut} ->
+            mapfold_(Fun, AccOut, maps:next(Iter));
+        {error, Reason} ->
+            {error, {K, V, Reason}}
+    end;
+mapfold_(_Fun, Acc, none) ->
+    {ok, Acc}.

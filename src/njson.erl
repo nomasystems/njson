@@ -22,11 +22,11 @@
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec decode(Binary) -> {ok, Json} | undefined when
+-spec decode(Binary) -> {ok, Json} | {ok, undefined} when
     Binary :: binary(),
     Json :: t().
 decode(<<>>) ->
-    undefined;
+    {ok, undefined};
 decode(Json) ->
     njson_decoder:decode(Json).
 

@@ -47,16 +47,16 @@
 -spec decode(Binary) -> OK | Error when
     Binary :: binary(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 decode(Json) when is_binary(Json) ->
     decode(Json, Json).
 
 -spec decode(Binary, Binary) -> OK | Error when
     Binary :: binary(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 %Ignore UTF8 BOM as suggested in RFC section 8.1
 decode(<<239, 187, 191, Bin/binary>>, Json) ->
     val(Bin, Json, 3, [?END]);
@@ -71,8 +71,8 @@ decode(Bin, Json) ->
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 val(<<C, Bin/binary>>, Original, Skip, Next) ->
     case C of
         $\t ->
@@ -104,7 +104,7 @@ val(<<C, Bin/binary>>, Original, Skip, Next) ->
         ${ ->
             key(Bin, Original, Skip + 1, [?KEY, #{} | Next]);
         _ ->
-            {error, {invalid_value, C}}
+            {error, {invalid_value, [C], Skip}}
     end.
 
 -spec alse(Binary, Binary, Skip, Next) -> OK | Error when
@@ -112,36 +112,36 @@ val(<<C, Bin/binary>>, Original, Skip, Next) ->
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 alse(<<"alse", Bin/binary>>, Original, Skip, Next) ->
     next(Bin, Original, Skip + 5, Next, false);
-alse(<<_Bin/binary>>, _Original, _Skip, _Next) ->
-    {error, {invalid_value, $f}}.
+alse(<<_Bin/binary>>, _Original, Skip, _Next) ->
+    {error, {invalid_value, [$f], Skip}}.
 
 -spec ull(Binary, Binary, Skip, Next) -> OK | Error when
     Binary :: binary(),
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 ull(<<"ull", Bin/binary>>, Original, Skip, Next) ->
     next(Bin, Original, Skip + 4, Next, null);
-ull(<<_Bin/binary>>, _Original, _Skip, _Next) ->
-    {error, {invalid_value, $n}}.
+ull(<<_Bin/binary>>, _Original, Skip, _Next) ->
+    {error, {invalid_value, [$n], Skip}}.
 
 -spec rue(Binary, Binary, Skip, Next) -> OK | Error when
     Binary :: binary(),
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 rue(<<"rue", Bin/binary>>, Original, Skip, Next) ->
     next(Bin, Original, Skip + 4, Next, true);
-rue(<<_Bin/binary>>, _Original, _Skip, _Next) ->
-    {error, {invalid_value, $t}}.
+rue(<<_Bin/binary>>, _Original, Skip, _Next) ->
+    {error, {invalid_value, [$t], Skip}}.
 
 -spec next(Binary, Binary, Skip, Next, Value) -> OK | Error when
     Binary :: binary(),
@@ -149,8 +149,8 @@ rue(<<_Bin/binary>>, _Original, _Skip, _Next) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Value :: false | null | true | binary() | number() | list() | map(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 next(<<Bin/binary>>, Original, Skip, Next, Value) ->
     case Next of
         [?END | NewNext] ->
@@ -169,8 +169,8 @@ next(<<Bin/binary>>, Original, Skip, Next, Value) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Value :: false | null | true | binary() | number() | list() | map(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 finalize(<<$\t, Bin/binary>>, Original, Skip, Next, Value) ->
     finalize(Bin, Original, Skip, Next, Value);
 finalize(<<$\n, Bin/binary>>, Original, Skip, Next, Value) ->
@@ -179,6 +179,8 @@ finalize(<<$\r, Bin/binary>>, Original, Skip, Next, Value) ->
     finalize(Bin, Original, Skip, Next, Value);
 finalize(<<$\s, Bin/binary>>, Original, Skip, Next, Value) ->
     finalize(Bin, Original, Skip, Next, Value);
+finalize(<<C, _Bin/binary>>, _Original, Skip, _Next, _Value) ->
+    {error, {unexpected_trailing_char, [C], Skip}};
 finalize(<<>>, _Original, _Skip, [], Value) ->
     {ok, Value}.
 
@@ -187,8 +189,8 @@ finalize(<<>>, _Original, _Skip, [], Value) ->
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 key(<<C, Bin/binary>>, Original, Skip, Next) ->
     case C of
         $\t ->
@@ -202,7 +204,9 @@ key(<<C, Bin/binary>>, Original, Skip, Next) ->
         $" ->
             string(Bin, Original, Skip + 1, Next, 0);
         $} ->
-            empty_object(Bin, Original, Skip + 1, Next)
+            empty_object(Bin, Original, Skip + 1, Next);
+        C ->
+            {error, {invalid_key, [C], Skip}}
     end.
 
 -spec close_key(Binary, Binary, Skip, Next, Value) -> OK | Error when
@@ -211,8 +215,8 @@ key(<<C, Bin/binary>>, Original, Skip, Next) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Value :: false | null | true | binary() | number() | list() | map(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 close_key(<<C, Bin/binary>>, Original, Skip, Next, Value) ->
     case C of
         $\t ->
@@ -224,7 +228,9 @@ close_key(<<C, Bin/binary>>, Original, Skip, Next, Value) ->
         $\s ->
             close_key(Bin, Original, Skip + 1, Next, Value);
         $: ->
-            val(Bin, Original, Skip + 1, [?OBJECT, Value | Next])
+            val(Bin, Original, Skip + 1, [?OBJECT, Value | Next]);
+        C ->
+            {error, {invalid_key, [C], Skip}}
     end.
 
 -spec array(Binary, Binary, Skip, Next, Value) -> OK | Error when
@@ -233,8 +239,8 @@ close_key(<<C, Bin/binary>>, Original, Skip, Next, Value) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Value :: false | null | true | binary() | number() | list() | map(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 array(<<$\t, Bin/binary>>, Original, Skip, Next, Value) ->
     array(Bin, Original, Skip + 1, Next, Value);
 array(<<$\n, Bin/binary>>, Original, Skip, Next, Value) ->
@@ -248,15 +254,17 @@ array(<<$,, Bin/binary>>, Original, Skip, Next, Value) ->
     val(Bin, Original, Skip + 1, [?ARRAY, [Value | Values] | NewNext]);
 array(<<$], Bin/binary>>, Original, Skip, Next, Value) ->
     [Values | NewNext] = Next,
-    next(Bin, Original, Skip + 1, NewNext, lists:reverse([Value | Values])).
+    next(Bin, Original, Skip + 1, NewNext, lists:reverse([Value | Values]));
+array(<<C, _Bin/binary>>, _Original, Skip, _Next, _Value) ->
+    {error, {invalid_array, [C], Skip}}.
 
 -spec array_close(Binary, Binary, Skip, Next) -> OK | Error when
     Binary :: binary(),
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 array_close(<<Bin/binary>>, Original, Skip, [?ARRAY, [] | Next]) ->
     next(Bin, Original, Skip + 1, Next, []).
 
@@ -266,8 +274,8 @@ array_close(<<Bin/binary>>, Original, Skip, [?ARRAY, [] | Next]) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Value :: false | null | true | binary() | number() | list() | map(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 object(<<$\t, Bin/binary>>, Original, Skip, Next, Value) ->
     object(Bin, Original, Skip + 1, Next, Value);
 object(<<$\n, Bin/binary>>, Original, Skip, Next, Value) ->
@@ -281,15 +289,17 @@ object(<<$,, Bin/binary>>, Original, Skip, Next, Value) ->
     key(Bin, Original, Skip + 1, [?KEY, maps:put(Key, Value, Object) | NewNext]);
 object(<<$}, Bin/binary>>, Original, Skip, Next, Value) ->
     [Key, Object | NewNext] = Next,
-    next(Bin, Original, Skip + 1, NewNext, maps:put(Key, Value, Object)).
+    next(Bin, Original, Skip + 1, NewNext, maps:put(Key, Value, Object));
+object(<<C, _Bin/binary>>, _Original, Skip, _Next, _Value) ->
+    {error, {invalid_object, [C], Skip}}.
 
 -spec empty_object(Binary, Binary, Skip, Next) -> OK | Error when
     Binary :: binary(),
     Skip :: non_neg_integer(),
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 empty_object(<<Bin/binary>>, Original, Skip, [?KEY, Map | Next]) ->
     next(Bin, Original, Skip, Next, Map).
 
@@ -299,8 +309,8 @@ empty_object(<<Bin/binary>>, Original, Skip, [?KEY, Map | Next]) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 number(<<$+, Bin/binary>>, Original, Skip, Next, Len) ->
     number(Bin, Original, Skip, Next, Len + 1);
 number(<<$-, Bin/binary>>, Original, Skip, Next, Len) ->
@@ -322,8 +332,8 @@ number(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 fraction(<<D, Bin/binary>>, Original, Skip, Next, Len) when D >= $0, D =< $9 ->
     fraction(Bin, Original, Skip, Next, Len + 1);
 fraction(<<E, Bin/binary>>, Original, Skip, Next, Len) when E == $e; E == $E ->
@@ -339,8 +349,8 @@ fraction(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Prefix :: binary(),
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 exponent(<<$+, Bin/binary>>, Original, Skip, Next, Prefix, Len) ->
     exponent(Bin, Original, Skip, Next, Prefix, Len + 1);
 exponent(<<$-, Bin/binary>>, Original, Skip, Next, Prefix, Len) ->
@@ -366,8 +376,8 @@ prepare_float(Prefix, Chunk) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 string(<<Bin/binary>>, Original, Skip, Next, Len) ->
     chunk(Bin, Original, Skip, Next, Len).
 
@@ -377,8 +387,8 @@ string(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 chunk(<<C, Bin/binary>>, Original, Skip, Next, Len) ->
     case C of
         $" ->
@@ -396,8 +406,8 @@ chunk(<<C, Bin/binary>>, Original, Skip, Next, Len) ->
     Len :: non_neg_integer(),
     Acc :: iolist(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 chunk(<<C, Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     case C of
         $" ->
@@ -414,8 +424,8 @@ chunk(<<C, Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 finalize_string(<<Bin/binary>>, Original, Skip, Next, Len) ->
     String = erlang:binary_part(Original, Skip, Len),
     next(Bin, Original, Skip + Len + 1, Next, String).
@@ -427,8 +437,8 @@ finalize_string(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Len :: non_neg_integer(),
     Acc :: maybe_improper_list(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 finalize_string(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Chunk = erlang:binary_part(Original, Skip, Len),
     String = iolist_to_binary([Acc | Chunk]),
@@ -440,8 +450,8 @@ finalize_string(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Len :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 unescape(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Chunk = erlang:binary_part(Original, Skip, Len),
     do_unescape(Bin, Original, Skip + Len + 1, Next, [Chunk]).
@@ -453,8 +463,8 @@ unescape(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Len :: non_neg_integer(),
     Acc :: maybe_improper_list(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 unescape(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Chunk = erlang:binary_part(Original, Skip, Len),
     do_unescape(Bin, Original, Skip + Len + 1, Next, [Acc | Chunk]).
@@ -465,8 +475,8 @@ unescape(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Acc :: maybe_improper_list(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 do_unescape(<<C, Bin/binary>>, Original, Skip, Next, Acc) ->
     case C of
         $" ->
@@ -495,8 +505,8 @@ do_unescape(<<C, Bin/binary>>, Original, Skip, Next, Acc) ->
     Next :: [?END | ?KEY | ?OBJECT | ?ARRAY | list() | map()],
     Acc :: iolist(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 unescape_unicode(<<U0, U1, U2, U3, Bin/binary>>, Original, Skip, Next, Acc) ->
     case unicode(U0, U1, U2, U3) of
         Unicode when Unicode >= 16#D800, Unicode =< 16#DFFF ->
@@ -540,8 +550,8 @@ dec($F) -> 15.
     Acc :: iolist(),
     Unicode :: non_neg_integer(),
     OK :: {ok, Json},
-    Error :: {error, {invalid_value, byte()}},
-    Json :: t().
+    Json :: t(),
+    Error :: decode_error().
 surrogate(<<$\\, $u, U0, U1, U2, U3, Bin/binary>>, Original, Skip, Next, Acc, Unicode0) ->
     Unicode1 = unicode(U0, U1, U2, U3),
     Unicode = (Unicode0 - 16#D800) * 16#400 + (Unicode1 - 16#DC00) + 16#10000,
