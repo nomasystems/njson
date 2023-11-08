@@ -13,16 +13,13 @@
 %% limitations under the License.
 -module(njson_encoder).
 
-%%% INCLUDE
--include("njson.hrl").
-
 %%% EXTERNAL EXPORTS
 -export([encode/2]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec encode(Json, boolean()) -> {ok, Binary} | encode_error() when
+-spec encode(Json, boolean()) -> {ok, Binary} | njson:encode_error() when
     Json :: njson:t(),
     Binary :: binary().
 encode(Map, true) when is_map(Map) ->
