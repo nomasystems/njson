@@ -34,6 +34,7 @@
 %%% EXTERNAL EXPORTS
 -export([decode/1]).
 
+%%% MACROS
 -define(END, 0).
 -define(KEY, 1).
 -define(OBJECT, 2).
