@@ -48,8 +48,8 @@ decode(Json) ->
 
 -spec encode(Json) -> {ok, binary()} when
     Json :: t().
-encode(Erlang) ->
-    njson_encoder:encode(Erlang, false).
+encode(Json) ->
+    njson_encoder:encode(Json, false).
 
 encode(Erlang, AsIOList) ->
     njson_encoder:encode(Erlang, AsIOList).
