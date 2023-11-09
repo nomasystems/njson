@@ -38,7 +38,7 @@
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec decode(Binary) -> {ok, Json} | {ok, undefined} when
+-spec decode(Binary) -> {ok, Json} | {ok, undefined} | decode_error() when
     Binary :: binary(),
     Json :: t().
 decode(<<>>) ->
