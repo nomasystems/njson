@@ -46,7 +46,7 @@ decode(<<>>) ->
 decode(Json) ->
     njson_decoder:decode(Json).
 
--spec encode(Json) -> {ok, binary()} when
+-spec encode(Json) -> {ok, binary()} | encode_error() when
     Json :: t().
 encode(Json) ->
     njson_encoder:encode(Json, false).
