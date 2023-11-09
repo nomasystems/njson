@@ -265,7 +265,9 @@ array(<<C, _Bin/binary>>, _Original, Skip, _Next, _Value) ->
     Json :: njson:t(),
     Error :: njson:decode_error().
 array_close(<<Bin/binary>>, Original, Skip, [?ARRAY, [] | Next]) ->
-    next(Bin, Original, Skip + 1, Next, []).
+    next(Bin, Original, Skip + 1, Next, []);
+array_close(<<_Bin/binary>>, _Original, Skip, _Next) ->
+    {error, {invalid_array, [$,], Skip}}.
 
 -spec object(Binary, Binary, Skip, Next, Value) -> OK | Error when
     Binary :: binary(),
