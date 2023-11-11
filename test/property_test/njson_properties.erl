@@ -44,9 +44,9 @@ properties(Options) ->
             Json = json_value_pretty_print_binary(JsonValue),
             Result =
                 try
-                    Decoded = njson:decode(Json),
-                    Json2 = njson:encode(Decoded),
-                    Decoded2 = njson:decode(Json2),
+                    {ok, Decoded} = njson:decode(Json),
+                    {ok, Json2} = njson:encode(Decoded),
+                    {ok, Decoded2} = njson:decode(Json2),
                     {Decoded,
                         % Tests property 1
                         compare(JsonValue, Decoded),

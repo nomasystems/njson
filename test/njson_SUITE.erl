@@ -44,7 +44,15 @@
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
 all() ->
-    [properties, json_decode, json_encode, json_json, json_undefined_encoding, json_emoji].
+    [
+        properties,
+        json_decode,
+        json_encode,
+        json_json,
+        json_undefined_encoding,
+        json_emoji,
+        json_errors
+    ].
 
 %%%-----------------------------------------------------------------------------
 %%% INIT SUITE EXPORTS
@@ -92,12 +100,7 @@ json_decode() ->
 
 json_decode(_Conf) ->
     Test = fun({Json, Erlang}) ->
-        try
-            Erlang = njson:decode(Json)
-        catch
-            Error ->
-                throw({error, [{decoding, Json}, {exptected, Erlang}, {received, Error}]})
-        end
+        ?assertEqual({ok, Erlang}, njson:decode(Json))
     end,
     lists:foreach(Test, json_decode_only_cases() ++ json_cases()).
 
@@ -106,24 +109,17 @@ json_encode() ->
 
 json_encode(_Conf) ->
     Test = fun({Json, Erlang}) ->
-        try
-            Json = njson:encode(Erlang)
-        catch
-            Error ->
-                throw({error, [{encoding, Erlang}, {exptected, Json}, {received, Error}]})
-        end
+        ?assertEqual({ok, Json}, njson:encode(Erlang))
     end,
     lists:foreach(Test, json_encode_only_cases() ++ json_cases()),
 
     Test2 = fun({Json, Erlang}) ->
-        try
-            Json = iolist_to_binary(njson:encode(Erlang, true))
-        catch
-            Error ->
-                throw({error, [{encoding, Erlang}, {exptected, Json}, {received, Error}]})
-        end
+        {ok, Encoded} = njson:encode(Erlang),
+        ?assertEqual(Json, iolist_to_binary(Encoded))
     end,
-    lists:foreach(Test2, json_encode_only_cases() ++ json_cases()).
+    lists:foreach(Test2, json_encode_only_cases() ++ json_cases()),
+    {ok, _Json} = njson:encode(#{<<"key2">> => <<"Val2">>}, true),
+    {ok, _Json2} = njson:encode([<<"val1">>, <<"val2">>], true).
 
 json_decode_only_cases() ->
     [
@@ -131,17 +127,18 @@ json_decode_only_cases() ->
         {<<"-1.0e-3">>, -0.001},
         {<<"+1.0E+3">>, 1.0e3},
         {<<"+1E+3">>, 1.0e3},
+        {<<"false", $\s, $\t, $\r, $\n>>, false},
         {<<"\"\\\\, \\b, \\f, \\r, \\n\"">>, <<"\\, \b, \f, \r, \n">>},
         {<<"\s\t\r\n { \r\n   \"currency\" \t\r\n: \"\\u20AC\"}">>, #{
             <<"currency">> => <<"€"/utf8>>
         }},
         {<<"{\"currency\": \"\\u20ac\"}">>, #{<<"currency">> => <<"€"/utf8>>}},
         {<<"{\"key1\":\"Val1\", \"key2\":null, \"key3\":\"Val3\"}">>, #{
-            <<"key1">> => <<"Val1">>, <<"key3">> => <<"Val3">>
+            <<"key1">> => <<"Val1">>, <<"key2">> => null, <<"key3">> => <<"Val3">>
         }},
 
         {<<"{\"d\":\"a6\\/\"}">>, #{<<"d">> => <<"a6/">>}},
-        {<<"null">>, undefined}
+        {<<"null">>, null}
     ].
 
 json_encode_only_cases() ->
@@ -205,9 +202,13 @@ json_json() ->
     [{userdata, [{doc, "Registry API."}]}].
 
 json_json(_Conf) ->
-    Test = fun({Json, Erlang}) -> Erlang = njson:decode(Json) end,
+    Test = fun({Json, Erlang}) ->
+        ?assertEqual({ok, Erlang}, njson:decode(Json))
+    end,
     ok = lists:foreach(Test, json_json_cases()),
-    Test2 = fun({Json, Erlang}) -> Json = njson:encode(Erlang) end,
+    Test2 = fun({Json, Erlang}) ->
+        ?assertEqual({ok, Json}, njson:encode(Erlang))
+    end,
     ok = lists:foreach(Test2, json_json_cases()).
 
 json_json_cases() ->
@@ -231,12 +232,22 @@ json_undefined_encoding() ->
     [{userdata, [{doc, "Properly undefined management in encoding"}]}].
 
 json_undefined_encoding(_Conf) ->
-    <<"{}">> = njson:encode(#{}),
-    <<"{\"foo\":\"bar\"}">> =
-        njson:encode(#{<<"undefined">> => undefined, <<"foo">> => <<"bar">>}),
-    <<"{\"foo\":{}}">> = njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined}}),
-    <<"{\"foo\":{\"bar\":\"baz\"}}">> =
-        njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}}),
+    ?assertEqual(
+        {ok, <<"{}">>},
+        njson:encode(#{}, false)
+    ),
+    ?assertEqual(
+        {ok, <<"{\"foo\":\"bar\"}">>},
+        njson:encode(#{<<"undefined">> => undefined, <<"foo">> => <<"bar">>})
+    ),
+    ?assertEqual(
+        {ok, <<"{\"foo\":{}}">>},
+        njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined}})
+    ),
+    ?assertEqual(
+        {ok, <<"{\"foo\":{\"bar\":\"baz\"}}">>},
+        njson:encode(#{<<"foo">> => #{<<"undefined">> => undefined, <<"bar">> => <<"baz">>}})
+    ),
     ok.
 
 json_emoji() ->
@@ -247,10 +258,23 @@ json_emoji(_Conf) ->
     DecodedHoF = #{
         <<"text">> => #{<<"body">> => <<226, 157, 164, 226, 128, 141, 240, 159, 148, 165>>}
     },
-    ?assertEqual(DecodedHoF, njson:decode(HoFBin)),
+    ?assertEqual({ok, DecodedHoF}, njson:decode(HoFBin)),
     EncodedHoF =
         <<123, 34, 116, 101, 120, 116, 34, 58, 123, 34, 98, 111, 100, 121, 34, 58, 34, 226, 157,
             164, 226, 128, 141, 240, 159, 148, 165, 34, 125, 125>>,
-    ?assertEqual(EncodedHoF, njson:encode(DecodedHoF)),
+    ?assertEqual({ok, EncodedHoF}, njson:encode(DecodedHoF)),
     io:format("~tp~n", [DecodedHoF]),
     io:format("~ts~n", [EncodedHoF]).
+
+json_errors() ->
+    [{userdata, [{doc, "Check errors"}]}].
+
+json_errors(_Conf) ->
+    {error, _} = njson:decode(<<"not-a-json">>),
+    {error, _} = njson:decode(<<"folse">>),
+    {error, _} = njson:decode(<<"troe">>),
+    {error, _} = njson:decode(<<"other">>),
+    {error, _} = njson:decode(<<"{,}">>),
+    {error, _} = njson:decode(<<"false,">>),
+    {error, _} = njson:encode(test),
+    ok.

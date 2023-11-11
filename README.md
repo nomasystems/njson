@@ -26,14 +26,11 @@ Add `njson` to your project dependencies.
 
 ## Implementation
 
-`njson` aims to be pragmatic and efficient. To do so, it considers some assumptions:
-
-- It decodes JSON to erlang maps. Someone might argue about duplicated keys. We don't see any practical use for this feature, and the [RFC support this claim](https://datatracker.ietf.org/doc/html/rfc8259#section-4) ``The names within an object SHOULD be unique.`` 
-- It decodes JSON `null` values as Erlang `undefined`. Given we use maps, this is as not decoding `null` values. Following this, it doesn't encode `null`. It's been a long debate, but no one has ever shown a practical case where not encoding an attribute or encoding an attribute with `null` value makes a difference. Previous considerations will make `njson` somehow asymmetric, but that is not a problem in practical cases.
-- The decoder is implemented using CPS style. Thanks `jsone` team for showing us about it.
-
-
-
+`njson` aims to be pragmatic and efficient.
+To do so, it decodes JSON to erlang maps with binary keys.
+Someone might argue about duplicated keys.
+We don't see any practical use for this feature,
+and the [RFC support this claim](https://datatracker.ietf.org/doc/html/rfc8259#section-4) ``The names within an object SHOULD be unique.`` 
 
 ## A simple example
 
@@ -60,22 +57,23 @@ Add `njson` to your project dependencies.
 --------------------------------------------------------------------------------------
 Decoder:
 --------------------------------------------------------------------------------------
-   File size (bytes)        NJson time(us)       Jsone time (us)       Jason time (us)
-               13405                   166                   205                   581
-               33785                   414                   498                  1322
-               67540                   826                   985                  2798
-              135685                  1701                  2024                  5870
+   File size (bytes)        NJson time(us)       Thoas time (us)       Jsone time (us)
+               13405                 12096                 28063                 24249
+               31793                 20188                 21051                 22784
+               33785                 21844                 26516                 36027
+               67540                 43974                 53933                 70363
+              135685                 89314                106720                145824
 --------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------
 Encoder:
 --------------------------------------------------------------------------------------
-   File size (bytes)        NJson time(us)       Jsone time (us)       Jason time (us)
-               13405                    59                   134                   412
-               33785                   193                   321                  1143
-               67540                   333                   661                  2374
-              135685                   847                  1389                  5343
---------------------------------------------------------------------------------------
-```
+   File size (bytes)        NJson time(us)       Thoas time (us)       Jsone time (us)
+               13405                  9912                 12793                 11114
+               31793                 12233                 15060                 13950
+               33785                 23184                 28485                 23792
+               67540                 45248                 63248                 48199
+              135685                 90410                125532                101918
+--------------------------------------------------------------------------------------```
 
 ## Support
 

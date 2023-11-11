@@ -17,28 +17,39 @@
 -export([decode/1, encode/1, encode/2]).
 
 %%% TYPES
--type t() :: undefined | boolean() | number() | binary() | [t()] | #{binary() => t()}.
+-type t() :: null | boolean() | number() | binary() | [t()] | #{binary() => t()}.
+
+-type decode_error_reason() ::
+    invalid_value | unexpected_trailing_char | invalid_key | invalid_array | invalid_object.
+-type decode_error() :: {error, {decode_error_reason(), [byte()], non_neg_integer()}}.
+
+-type encode_error_reason() :: invalid_key | invalid_value | invalid_map | invalid_list.
+-type encode_error() :: {error, {encode_error_reason(), any()}}.
 
 %%% EXPORT TYPES
--export_type([t/0]).
+-export_type([
+    t/0,
+    decode_error/0,
+    decode_error_reason/0,
+    encode_error/0,
+    encode_error_reason/0
+]).
 
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec decode(Binary) -> Json when
+-spec decode(Binary) -> {ok, Json} | {ok, undefined} | decode_error() when
     Binary :: binary(),
     Json :: t().
 decode(<<>>) ->
-    undefined;
+    {ok, undefined};
 decode(Json) ->
-    {ok, Result, _Rest} = njson_decoder:decode(Json),
-    Result.
+    njson_decoder:decode(Json).
 
--spec encode(Json) -> Binary when
-    Json :: t(),
-    Binary :: binary().
-encode(Erlang) ->
-    njson_encoder:encode(Erlang, false).
+-spec encode(Json) -> {ok, binary()} | encode_error() when
+    Json :: t().
+encode(Json) ->
+    njson_encoder:encode(Json, false).
 
 encode(Erlang, AsIOList) ->
     njson_encoder:encode(Erlang, AsIOList).
