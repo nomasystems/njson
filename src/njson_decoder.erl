@@ -14,7 +14,6 @@
 -module(njson_decoder).
 -compile([
     {inline, [
-        {next, 5},
         {array, 5},
         {array_close, 4},
         {finalize, 5},
@@ -24,7 +23,6 @@
         {chunk, 5},
         {chunk, 6},
         {do_unescape, 5},
-        {dec, 1},
         {unicode, 4}
     ]}
 ]).
