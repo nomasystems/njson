@@ -389,7 +389,7 @@ string(<<Bin/binary>>, Original, Skip, Next, Len) ->
     Json :: njson:t(),
     Error :: njson:decode_error().
 chunk(<<>>, _Original, Skip, _Next, _Len) ->
-    {error, {incomplete_string, Skip}};
+    {error, {unexpected_end_of_string, [], Skip}};
 chunk(<<C, Bin/binary>>, Original, Skip, Next, Len) ->
     case C of
         $" ->
@@ -410,7 +410,7 @@ chunk(<<C, Bin/binary>>, Original, Skip, Next, Len) ->
     Json :: njson:t(),
     Error :: njson:decode_error().
 chunk(<<>>, _Original, Skip, _Next, _Len, _Acc) ->
-    {error, {incomplete_string, Skip}};
+    {error, {unexpected_end_of_string, [], Skip}};
 chunk(<<C, Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     case C of
         $" ->
