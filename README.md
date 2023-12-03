@@ -1,7 +1,25 @@
 # njson
 [![njson](https://github.com/nomasystems/njson/actions/workflows/ci.yml/badge.svg)](https://github.com/nomasystems/njson/actions/workflows/ci.yml)
 
-`njson` is an OTP library to pragmatically and efficiently encode and decode JSON to Erlang maps.
+`njson` is a robust and efficient Erlang library that seamlessly encodes and decodes JSON
+data into Erlang maps. It is designed to be pragmatic and efficient, making it an ideal
+choice for a wide range of Erlang applications.
+
+
+## Features and implementation decisions
+
+njson offers a comprehensive set of features for handling JSON data in Erlang:
+
+- **Easy-to-use API**: njson provides a straightforward API that makes it easy to encode
+and decode JSON data.
+- **Efficient decoding**: njson's decoding is optimized for performance, ensuring
+efficient processing of large JSON payloads.
+- **Binary key support**: njson encodes and decodes JSON data using binary keys,
+improving memory usage and performance.
+- **Duplicated key handling**: njson adheres to the [RFC recommendation](https://datatracker.ietf.org/doc/html/rfc8259#section-4)
+that object keys should be unique, eliminating potential conflicts.
+- **Flexible encoding options**: njson supports encoding as both binary and iolist,
+catering to different performance requirements.
 
 ## Setup
 
@@ -14,23 +32,14 @@ Add `njson` to your project dependencies.
 ]}.
 ```
 
-## Features
+## Usage
 
-`njson` exposes utilities via its API that allows you to:
+`njson` provides two primary functions for encoding and decoding JSON data:
 
 | Function | Description |
 | --------  | ------------ |
 | `njson:decode/1` | Decodes a JSON binary as Erlang map |
 | `njson:encode/2` | Encodes a map with binary keys as JSON |
-
-
-## Implementation
-
-`njson` aims to be pragmatic and efficient.
-To do so, it decodes JSON to erlang maps with binary keys.
-Someone might argue about duplicated keys.
-We don't see any practical use for this feature,
-and the [RFC support this claim](https://datatracker.ietf.org/doc/html/rfc8259#section-4) ``The names within an object SHOULD be unique.`` 
 
 ## A simple example
 
