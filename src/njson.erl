@@ -20,8 +20,14 @@
 -type t() :: null | boolean() | number() | binary() | [t()] | #{binary() => t()}.
 
 -type decode_error_reason() ::
-    invalid_value | unexpected_trailing_char | invalid_key | invalid_array | invalid_object.
--type decode_error() :: {error, {decode_error_reason(), [byte()], non_neg_integer()}}.
+    invalid_value
+    | unexpected_trailing_char
+    | invalid_key
+    | invalid_array
+    | invalid_object
+    | unexpected_end_of_string.
+-type decode_error() ::
+    {error, {decode_error_reason(), [byte()], non_neg_integer()}}.
 
 -type encode_error_reason() :: invalid_key | invalid_value | invalid_map | invalid_list.
 -type encode_error() :: {error, {encode_error_reason(), any()}}.
