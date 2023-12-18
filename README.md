@@ -2,8 +2,9 @@
 [![njson](https://github.com/nomasystems/njson/actions/workflows/ci.yml/badge.svg)](https://github.com/nomasystems/njson/actions/workflows/ci.yml)
 
 `njson` is a robust and efficient Erlang library that seamlessly encodes and decodes JSON
-data into Erlang maps. It is designed to be pragmatic and efficient, making it an ideal
-choice for a wide range of Erlang applications.
+data into Erlang terms, encoding JSON objects as Erlang maps.
+It is designed to be pragmatic and efficient, making it an ideal choice for a wide range
+of Erlang applications.
 
 
 ## Features and implementation decisions
@@ -15,7 +16,7 @@ and decode JSON data.
 - **Efficient decoding**: njson's decoding is optimized for performance, ensuring
 efficient processing of large JSON payloads.
 - **Binary key support**: njson encodes and decodes JSON data using binary keys,
-improving memory usage and performance.
+improving memory usage and performance. This also avoids atom table overflow vulnerability.
 - **Duplicated key handling**: njson adheres to the [RFC recommendation](https://datatracker.ietf.org/doc/html/rfc8259#section-4)
 that object keys should be unique, eliminating potential conflicts.
 - **Flexible encoding options**: njson supports encoding as both binary and iolist,
