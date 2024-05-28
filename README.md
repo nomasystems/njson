@@ -48,16 +48,33 @@ Add `njson` to your project dependencies.
 %%% Decode
 
 1> njson:decode(<<"{\"a\":\"b\"}">>).
-{ok,#{<<"a">> => <<"b">>},<<>>}
+{ok,#{<<"a">> => <<"b">>}}
 
 %%% Encode as binary
 2> njson:encode(#{<<"a">> => <<"b">>}).
-<<"{\"a\":\"b\"}">>
+{ok,<<"{\"a\":\"b\"}">>}
 
 %%% Encode as iolist (even faster)
 3> njson:encode(#{<<"a">> => <<"b">>}, true).
-[123,[[34,<<"a">>,34],58,[34,<<"b">>,34]],125]
+{ok,[123,[[34,<<"a">>,34],58,[34,<<"b">>,34]],125]}
 
+```
+
+## Error handling
+
+See [details](https://github.com/nomasystems/njson/blob/94c586b92a7e24c403089cdbe2994b7e7c87b9cc/src/njson.erl#L22)
+
+```erl
+
+%%% Decode 
+
+1> njson:decode(<<"{\"a\":\"b\}">>).
+{error,{unexpected_end_of_string,[],6}}
+
+
+%%% Encode
+2> njson:encode(#{<<"a">> => a}).   
+{error,{invalid_map,{<<"a">>,a,{invalid_value,a}}}}
 ```
 
 ## Benchmarks
