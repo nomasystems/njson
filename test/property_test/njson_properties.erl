@@ -19,6 +19,13 @@
 %%% EXPORTS
 -compile([export_all, nowarn_export_all]).
 
+%%% MACROS
+-define(is_ascii_escape(C),
+    C >= 16#00 andalso C =< 16#1F orelse 
+    C =:= 16#22 orelse 
+    C =:= 16#5C
+).
+
 %%-----------------------------------------------------------------------------
 %%% PROPERTIES
 %%%-----------------------------------------------------------------------------
@@ -243,7 +250,11 @@ json_char_escaped() ->
     oneof(json_char_escaped_list()).
 
 json_char_escaped_list() ->
-    [16#22, 16#5C, 16#2F, 16#8, 16#C, 16#A, 16#D, 16#9].
+    [16#00, 16#01, 16#02, 16#03, 16#04, 16#05, 16#06, 16#07,
+    16#08, 16#09, 16#0A, 16#0B, 16#0C, 16#0D, 16#0E, 16#0F, 
+    16#10, 16#11, 16#12, 16#13, 16#14, 16#15, 16#16, 16#17,
+    16#18, 16#19, 16#1A, 16#1B, 16#1C, 16#1D, 16#1E, 16#1F,
+    16#22, 16#5C].
 
 json_number(Options) ->
     ?SUCHTHAT(
@@ -332,21 +343,7 @@ pretty_print_json_array_elements([]) ->
 pretty_print_json_escape_chars(CharacterList) ->
     lists:map(fun escape_char/1, CharacterList).
 
-escape_char(16#22) ->
-    [16#5C, 16#22];
-escape_char(16#5C) ->
-    [16#5C, 16#5C];
-escape_char(16#2F) ->
-    [16#5C, 16#2F];
-escape_char(16#8) ->
-    [16#5C, 16#62];
-escape_char(16#C) ->
-    [16#5C, 16#66];
-escape_char(16#A) ->
-    [16#5C, 16#6E];
-escape_char(16#D) ->
-    [16#5C, 16#72];
-escape_char(16#9) ->
-    [16#5C, 16#74];
+escape_char(C) when ?is_ascii_escape(C)->
+    [16#5C, C];
 escape_char(C) ->
     C.

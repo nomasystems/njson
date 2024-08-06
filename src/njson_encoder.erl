@@ -192,27 +192,33 @@ escape(<<>>, Base, _Len, Acc) ->
 escape(<<$", Bin/binary>>, Base, Len, Acc) ->
     String = binary:part(Base, 0, Len),
     escape(Bin, Bin, 0, [Acc, String, $\\, $"]);
-escape(<<$/, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $/]);
 escape(<<$\\, Bin/binary>>, Base, Len, Acc) ->
     String = binary:part(Base, 0, Len),
     escape(Bin, Bin, 0, [Acc, String, $\\, $\\]);
 escape(<<$\b, Bin/binary>>, Base, Len, Acc) ->
     String = binary:part(Base, 0, Len),
     escape(Bin, Bin, 0, [Acc, String, $\\, $b]);
-escape(<<$\f, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $f]);
-escape(<<$\n, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $n]);
-escape(<<$\r, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $r]);
 escape(<<$\t, Bin/binary>>, Base, Len, Acc) ->
     String = binary:part(Base, 0, Len),
     escape(Bin, Bin, 0, [Acc, String, $\\, $t]);
+escape(<<$\n, Bin/binary>>, Base, Len, Acc) ->
+    String = binary:part(Base, 0, Len),
+    escape(Bin, Bin, 0, [Acc, String, $\\, $n]);
+escape(<<$\v, Bin/binary>>, Base, Len, Acc) ->
+    String = binary:part(Base, 0, Len),
+    escape(Bin, Bin, 0, [Acc, String, $\\, $v]);
+escape(<<$\f, Bin/binary>>, Base, Len, Acc) ->
+    String = binary:part(Base, 0, Len),
+    escape(Bin, Bin, 0, [Acc, String, $\\, $f]);
+escape(<<$\r, Bin/binary>>, Base, Len, Acc) ->
+    String = binary:part(Base, 0, Len),
+    escape(Bin, Bin, 0, [Acc, String, $\\, $r]);
+escape(<<C, Bin/binary>>, Base, Len, Acc) when
+    C >= 16#00 andalso C =< 16#07 orelse
+        C >= 16#0E andalso C =< 16#1F
+->
+    String = binary:part(Base, 0, Len),
+    escape(Bin, Bin, 0, [Acc, String, $\\, C]);
 escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
     escape(Bin, Base, Len + 1, Acc).
 
