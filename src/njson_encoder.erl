@@ -18,9 +18,9 @@
 
 %%% MACROS
 -define(is_ascii_escape(C),
-    (C >= 16#00 andalso C =< 16#1F) orelse 
-    (C =:= 16#22) orelse 
-    (C =:= 16#5C)
+    (C >= 16#00 andalso C =< 16#1F) orelse
+        (C =:= 16#22) orelse
+        (C =:= 16#5C)
 ).
 
 %%%-----------------------------------------------------------------------------
@@ -196,26 +196,34 @@ escape(<<>>, Base, _Len, []) ->
     Base;
 escape(<<>>, Base, _Len, Acc) ->
     [Acc, Base];
-escape(<<C, Bin/binary>>, Base, Len, Acc) when ?is_ascii_escape(C)->
+escape(<<C, Bin/binary>>, Base, Len, Acc) when ?is_ascii_escape(C) ->
     String = binary:part(Base, 0, Len),
     escape(Bin, Bin, 0, [Acc, String, escape_char(C)]);
 escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
-    escape(Bin, Base, Len + 1, Acc). 
+    escape(Bin, Base, Len + 1, Acc).
 
-escape_char(C) when C >= 16#00 andalso C =< 16#07 -> 
+escape_char(C) when C >= 16#00 andalso C =< 16#07 ->
     Bin = integer_to_binary(C, 16),
     <<"\\u000", Bin/binary>>;
-escape_char($\b) -> <<"\\b">>;
-escape_char($\t) -> <<"\\t">>;
-escape_char($\n) -> <<"\\n">>;
-escape_char($\x0b) -> <<"\\u000B">>;
-escape_char($\f) -> <<"\\f">>;
-escape_char($\r) -> <<"\\r">>;
-escape_char(C) when C >= 16#0E andalso C =< 16#1F -> 
+escape_char($\b) ->
+    <<"\\b">>;
+escape_char($\t) ->
+    <<"\\t">>;
+escape_char($\n) ->
+    <<"\\n">>;
+escape_char($\x0b) ->
+    <<"\\u000B">>;
+escape_char($\f) ->
+    <<"\\f">>;
+escape_char($\r) ->
+    <<"\\r">>;
+escape_char(C) when C >= 16#0E andalso C =< 16#1F ->
     Bin = integer_to_binary(C, 16),
     <<"\\u00", Bin/binary>>;
-escape_char($") -> <<"\\\"">>;
-escape_char($\\) -> <<"\\\\">>.
+escape_char($") ->
+    <<"\\\"">>;
+escape_char($\\) ->
+    <<"\\\\">>.
 
 %%%-----------------------------------------------------------------------------
 %%% BIND FUNCTIONS
