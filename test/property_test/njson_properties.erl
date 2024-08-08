@@ -21,9 +21,9 @@
 
 %%% MACROS
 -define(is_ascii_escape(C),
-    C >= 16#00 andalso C =< 16#1F orelse 
-    C =:= 16#22 orelse 
-    C =:= 16#5C
+    (C >= 16#00 andalso C =< 16#1F) orelse 
+    (C =:= 16#22) orelse 
+    (C =:= 16#5C)
 ).
 
 %%-----------------------------------------------------------------------------

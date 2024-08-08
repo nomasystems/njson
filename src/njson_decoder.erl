@@ -482,27 +482,20 @@ unescape(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Error :: njson:decode_error().
 do_unescape(<<C, Bin/binary>>, Original, Skip, Next, Acc) ->
     case C of
+        $b ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\b]);
+        $t ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\t]);
+        $n ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\n]);
+        $f ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\f]);
+        $r ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\r]);
         $" ->
             chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $"]);
         $\\ ->
             chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\\]);
-        $b ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\b]);
-        $f ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\f]);
-        $n ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\n]);
-        $v ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\v]);
-        $r ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\r]);
-        $t ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\t]);
-        C when
-            C >= 16#00 andalso C =< 16#07 orelse
-                C >= 16#E andalso C =< 16#1F
-        ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, C]);
         $u ->
             unescape_unicode(Bin, Original, Skip + 1, Next, Acc)
     end.
