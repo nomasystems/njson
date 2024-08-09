@@ -310,10 +310,6 @@ empty_object(<<Bin/binary>>, Original, Skip, [?KEY, Map | Next]) ->
     OK :: {ok, Json},
     Json :: njson:t(),
     Error :: njson:decode_error().
-number(<<$+, Bin/binary>>, Original, Skip, Next, Len) ->
-    number(Bin, Original, Skip, Next, Len + 1);
-number(<<$-, Bin/binary>>, Original, Skip, Next, Len) ->
-    number(Bin, Original, Skip, Next, Len + 1);
 number(<<$., Bin/binary>>, Original, Skip, Next, Len) ->
     fraction(Bin, Original, Skip, Next, Len + 1);
 number(<<D, Bin/binary>>, Original, Skip, Next, Len) when D >= $0, D =< $9 ->

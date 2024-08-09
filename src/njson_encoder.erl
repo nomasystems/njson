@@ -217,7 +217,10 @@ escape_char($\f) ->
     <<"\\f">>;
 escape_char($\r) ->
     <<"\\r">>;
-escape_char(C) when C >= 16#0E andalso C =< 16#1F ->
+escape_char(C) when C =:= 16#0E orelse C =:= 16#0F ->
+    Bin = integer_to_binary(C, 16),
+    <<"\\u000", Bin/binary>>;
+escape_char(C) when C >= 16#10 andalso C =< 16#1F ->
     Bin = integer_to_binary(C, 16),
     <<"\\u00", Bin/binary>>;
 escape_char($") ->
