@@ -16,6 +16,13 @@
 %%% EXTERNAL EXPORTS
 -export([encode/2]).
 
+%%% MACROS
+-define(is_ascii_escape(C),
+    (C >= 16#00 andalso C =< 16#1F) orelse
+        (C =:= 16#22) orelse
+        (C =:= 16#5C)
+).
+
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
@@ -189,32 +196,37 @@ escape(<<>>, Base, _Len, []) ->
     Base;
 escape(<<>>, Base, _Len, Acc) ->
     [Acc, Base];
-escape(<<$", Bin/binary>>, Base, Len, Acc) ->
+escape(<<C, Bin/binary>>, Base, Len, Acc) when ?is_ascii_escape(C) ->
     String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $"]);
-escape(<<$/, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $/]);
-escape(<<$\\, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $\\]);
-escape(<<$\b, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $b]);
-escape(<<$\f, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $f]);
-escape(<<$\n, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $n]);
-escape(<<$\r, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $r]);
-escape(<<$\t, Bin/binary>>, Base, Len, Acc) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, $\\, $t]);
+    escape(Bin, Bin, 0, [Acc, String, escape_char(C)]);
 escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
     escape(Bin, Base, Len + 1, Acc).
+
+escape_char(C) when C >= 16#00 andalso C =< 16#07 ->
+    Bin = integer_to_binary(C, 16),
+    <<"\\u000", Bin/binary>>;
+escape_char($\b) ->
+    <<"\\b">>;
+escape_char($\t) ->
+    <<"\\t">>;
+escape_char($\n) ->
+    <<"\\n">>;
+escape_char($\x0b) ->
+    <<"\\u000B">>;
+escape_char($\f) ->
+    <<"\\f">>;
+escape_char($\r) ->
+    <<"\\r">>;
+escape_char(C) when C =:= 16#0E orelse C =:= 16#0F ->
+    Bin = integer_to_binary(C, 16),
+    <<"\\u000", Bin/binary>>;
+escape_char(C) when C >= 16#10 andalso C =< 16#1F ->
+    Bin = integer_to_binary(C, 16),
+    <<"\\u00", Bin/binary>>;
+escape_char($") ->
+    <<"\\\"">>;
+escape_char($\\) ->
+    <<"\\\\">>.
 
 %%%-----------------------------------------------------------------------------
 %%% BIND FUNCTIONS

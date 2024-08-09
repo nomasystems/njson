@@ -119,7 +119,8 @@ json_encode(_Conf) ->
     end,
     lists:foreach(Test2, json_encode_only_cases() ++ json_cases()),
     {ok, _Json} = njson:encode(#{<<"key2">> => <<"Val2">>}, true),
-    {ok, _Json2} = njson:encode([<<"val1">>, <<"val2">>], true).
+    {ok, _Json2} = njson:encode([<<"val1">>, <<"val2">>], true),
+    {ok, _Json3} = njson:encode(<<"val1">>, true).
 
 json_decode_only_cases() ->
     [
@@ -128,7 +129,7 @@ json_decode_only_cases() ->
         {<<"+1.0E+3">>, 1.0e3},
         {<<"+1E+3">>, 1.0e3},
         {<<"false", $\s, $\t, $\r, $\n>>, false},
-        {<<"\"\\\\, \\b, \\f, \\r, \\n\"">>, <<"\\, \b, \f, \r, \n">>},
+        {<<"[true, false \t \n \r \s]">>, [true, false]},
         {<<"\s\t\r\n { \r\n   \"currency\" \t\r\n: \"\\u20AC\"}">>, #{
             <<"currency">> => <<"€"/utf8>>
         }},
@@ -136,14 +137,15 @@ json_decode_only_cases() ->
         {<<"{\"key1\":\"Val1\", \"key2\":null, \"key3\":\"Val3\"}">>, #{
             <<"key1">> => <<"Val1">>, <<"key2">> => null, <<"key3">> => <<"Val3">>
         }},
-
-        {<<"{\"d\":\"a6\\/\"}">>, #{<<"d">> => <<"a6/">>}},
+        {<<"{\"key1\":\"Val1\"\t \n \r \s, \t \n \r \s}">>, #{
+            <<"key1">> => <<"Val1">>
+        }},
+        {<<"{\"d\":\"a6/\"}">>, #{<<"d">> => <<"a6/">>}},
         {<<"null">>, null}
     ].
 
 json_encode_only_cases() ->
     [
-        {<<"\"\\\\, \\t, \\b, \\f, \\r, \\n\"">>, <<"\\, \t, \b, \f, \r, \n">>},
         {<<"{\"listKey\":\"a6\"}">>, #{<<"listKey">> => <<"a6">>}},
         {<<"{\"binaryKey\":\"a6\"}">>, #{<<"binaryKey">> => <<"a6">>}},
         {<<"{}">>, #{}},
@@ -171,6 +173,10 @@ json_encode_only_cases() ->
 
 json_cases() ->
     [
+        {<<"\"\\\\, \\\", \\t, \\b, \\f, \\r, \\n \"">>, <<"\\, \", \t, \b, \f, \r, \n ">>},
+        {<<"\" \\u0000, \\t, \\u000B, \\r, \\u000E \"">>, <<" \x00, \t, \v, \x0D, \x0E ">>},
+        {<<"\" \\u000F, \\u001D, \\u001F, ¹, ï \"">>, <<" \x0F, \x1D, \x1F, \xb9, \xef ">>},
+        {<<"\" \\u0019, \\u000B, \\u000E, \\u000F \"">>, <<" \x19, \x0b, \x0e, \x0f ">>},
         {<<"true">>, true},
         {<<"false">>, false},
         {<<"">>, undefined},
@@ -217,8 +223,6 @@ json_json_cases() ->
         {<<"false">>, false},
         {<<"[]">>, []},
         {<<"">>, undefined},
-        {<<"\"ho\\\"l2\"">>, <<"ho\"l2">>},
-        {<<"\"ho\\\"l\\\"2\"">>, <<"ho\"l\"2">>},
         {<<"[true]">>, [true]},
         {<<"[true,false]">>, [true, false]},
         {<<"1">>, 1},
@@ -254,14 +258,16 @@ json_emoji() ->
     [{userdata, [{doc, "Properly decoding json with emojis"}]}].
 
 json_emoji(_Conf) ->
-    HoFBin = <<"{\"text\":{\"body\":\"\\u2764\\u200d\\ud83d\\udd25\"}}">>,
+    HoFBin = <<"{\"text\":{\"body\":\"\\u2764\\u200d\\ud83d\\udd25\\u0bef\"}}">>,
     DecodedHoF = #{
-        <<"text">> => #{<<"body">> => <<226, 157, 164, 226, 128, 141, 240, 159, 148, 165>>}
+        <<"text">> => #{
+            <<"body">> => <<226, 157, 164, 226, 128, 141, 240, 159, 148, 165, 224, 175, 175>>
+        }
     },
     ?assertEqual({ok, DecodedHoF}, njson:decode(HoFBin)),
     EncodedHoF =
         <<123, 34, 116, 101, 120, 116, 34, 58, 123, 34, 98, 111, 100, 121, 34, 58, 34, 226, 157,
-            164, 226, 128, 141, 240, 159, 148, 165, 34, 125, 125>>,
+            164, 226, 128, 141, 240, 159, 148, 165, 224, 175, 175, 34, 125, 125>>,
     ?assertEqual({ok, EncodedHoF}, njson:encode(DecodedHoF)),
     io:format("~tp~n", [DecodedHoF]),
     io:format("~ts~n", [EncodedHoF]).

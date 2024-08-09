@@ -310,10 +310,6 @@ empty_object(<<Bin/binary>>, Original, Skip, [?KEY, Map | Next]) ->
     OK :: {ok, Json},
     Json :: njson:t(),
     Error :: njson:decode_error().
-number(<<$+, Bin/binary>>, Original, Skip, Next, Len) ->
-    number(Bin, Original, Skip, Next, Len + 1);
-number(<<$-, Bin/binary>>, Original, Skip, Next, Len) ->
-    number(Bin, Original, Skip, Next, Len + 1);
 number(<<$., Bin/binary>>, Original, Skip, Next, Len) ->
     fraction(Bin, Original, Skip, Next, Len + 1);
 number(<<D, Bin/binary>>, Original, Skip, Next, Len) when D >= $0, D =< $9 ->
@@ -482,22 +478,20 @@ unescape(<<Bin/binary>>, Original, Skip, Next, Len, Acc) ->
     Error :: njson:decode_error().
 do_unescape(<<C, Bin/binary>>, Original, Skip, Next, Acc) ->
     case C of
-        $" ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $"]);
-        $/ ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $/]);
-        $\\ ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\\]);
         $b ->
             chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\b]);
-        $f ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\f]);
-        $n ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\n]);
-        $r ->
-            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\r]);
         $t ->
             chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\t]);
+        $n ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\n]);
+        $f ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\f]);
+        $r ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\r]);
+        $" ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $"]);
+        $\\ ->
+            chunk(Bin, Original, Skip + 1, Next, 0, [Acc, $\\]);
         $u ->
             unescape_unicode(Bin, Original, Skip + 1, Next, Acc)
     end.
