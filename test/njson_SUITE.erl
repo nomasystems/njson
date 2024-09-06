@@ -179,7 +179,6 @@ json_cases() ->
         {<<"\" \\u0019, \\u000B, \\u000E, \\u000F \"">>, <<" \x19, \x0b, \x0e, \x0f ">>},
         {<<"true">>, true},
         {<<"false">>, false},
-        {<<"">>, undefined},
         {<<"1">>, 1},
         {<<"2.0">>, 2.0},
         {<<"\"hola\"">>, <<"hola">>},
@@ -222,7 +221,6 @@ json_json_cases() ->
         {<<"true">>, true},
         {<<"false">>, false},
         {<<"[]">>, []},
-        {<<"">>, undefined},
         {<<"[true]">>, [true]},
         {<<"[true,false]">>, [true, false]},
         {<<"1">>, 1},
@@ -276,6 +274,7 @@ json_errors() ->
     [{userdata, [{doc, "Check errors"}]}].
 
 json_errors(_Conf) ->
+    {error, invalid_json} = njson:decode(<<>>),
     {error, _} = njson:decode(<<"not-a-json">>),
     {error, _} = njson:decode(<<"folse">>),
     {error, _} = njson:decode(<<"troe">>),
