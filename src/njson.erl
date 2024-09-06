@@ -44,12 +44,10 @@
 %%%-----------------------------------------------------------------------------
 %%% EXTERNAL EXPORTS
 %%%-----------------------------------------------------------------------------
--spec decode(Binary) -> {ok, Json} | {error, invalid_json} | decode_error() when
-    Binary :: binary(),
+-spec decode(Binary) -> {ok, Json} | decode_error() when
+    Binary :: nonempty_binary(),
     Json :: t().
-decode(<<>>) ->
-    {error, invalid_json};
-decode(Json) ->
+decode(Json) when is_binary(Json), byte_size(Json) > 0 ->
     njson_decoder:decode(Json).
 
 -spec encode(Json) -> {ok, binary()} | encode_error() when

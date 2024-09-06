@@ -274,7 +274,6 @@ json_errors() ->
     [{userdata, [{doc, "Check errors"}]}].
 
 json_errors(_Conf) ->
-    {error, invalid_json} = njson:decode(<<>>),
     {error, _} = njson:decode(<<"not-a-json">>),
     {error, _} = njson:decode(<<"folse">>),
     {error, _} = njson:decode(<<"troe">>),
