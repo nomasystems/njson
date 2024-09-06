@@ -50,7 +50,7 @@ decode(Json) when is_binary(Json), byte_size(Json) > 0 ->
     decode(Json, Json).
 
 -spec decode(Binary, Binary) -> OK | Error when
-    Binary :: binary(),
+    Binary :: nonempty_binary(),
     OK :: {ok, Json},
     Json :: njson:t(),
     Error :: njson:decode_error().
