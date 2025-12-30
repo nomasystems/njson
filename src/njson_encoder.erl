@@ -190,17 +190,17 @@ list_fold_encode(Val, AccIn) ->
     end.
 
 escape(Bin) ->
-    escape(Bin, Bin, 0, []).
+    escape(Bin, Bin, 0, 0, []).
 
-escape(<<>>, Base, _Len, []) ->
-    Base;
-escape(<<>>, Base, _Len, Acc) ->
-    [Acc, Base];
-escape(<<C, Bin/binary>>, Base, Len, Acc) when ?is_ascii_escape(C) ->
-    String = binary:part(Base, 0, Len),
-    escape(Bin, Bin, 0, [Acc, String, escape_char(C)]);
-escape(<<_C, Bin/binary>>, Base, Len, Acc) ->
-    escape(Bin, Base, Len + 1, Acc).
+escape(<<>>, Original, _Skip, _Len, []) ->
+    Original;
+escape(<<>>, Original, Skip, Len, Acc) ->
+    [Acc, binary:part(Original, Skip, Len)];
+escape(<<C, Bin/binary>>, Original, Skip, Len, Acc) when ?is_ascii_escape(C) ->
+    Chunk = binary:part(Original, Skip, Len),
+    escape(Bin, Original, Skip + Len + 1, 0, [Acc, Chunk, escape_char(C)]);
+escape(<<_C, Bin/binary>>, Original, Skip, Len, Acc) ->
+    escape(Bin, Original, Skip, Len + 1, Acc).
 
 escape_char(C) when C >= 16#00 andalso C =< 16#07 ->
     Bin = integer_to_binary(C, 16),
